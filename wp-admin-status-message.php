@@ -71,12 +71,8 @@ class WP_Admin_Status_Message {
     public function init() {
     	if(!defined('WASM_DIR'))
     	    define('WASM_DIR', dirname(__FILE__));
-    	
-    	if(!defined('WASM_DIR_URL'))
-    	    define('WASM_DIR_URL', plugin_dir_url( __FILE__ ));
-    	
-    	if(!defined('WASM_DIR_PATH'))
-    	    define('WASM_DIR_PATH', plugin_dir_path( __FILE__ ));
+
+        add_action('admin_menu', array( $this, 'wasm_admin_menu' ));
     }
 
     /**
@@ -84,6 +80,28 @@ class WP_Admin_Status_Message {
      */
     public static function activate() {
 
+    }
+
+    /**
+     * Add plugin settings submenu under tools
+     */
+    public function wasm_admin_menu() {
+        $capability = 'manage_options';
+        add_submenu_page(
+            'tools.php', // Parent element
+            esc_html__('Status Message', 'wp-admin-status-message'), // Text in browser title bar
+            esc_html__('Status Message', 'wp-admin-status-message'), // Text to be displayed in the menu.
+            $capability, // Capability
+            'wasm-status-page', // Page slug, will be displayed in URL
+            array($this, 'settings_page') // Callback function which displays the page
+        );
+    }
+
+    /**
+     * Settings page
+     */
+    public function settings_page() {
+        include_once WASM_DIR.'/inc/settings.php';
     }
 
     /**
