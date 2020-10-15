@@ -8,7 +8,7 @@ if ( !defined( 'WP_UNINSTALL_PLUGIN' ) )
     exit();
 
 // Leave no trail
-$option_name = 'wasm_status_message';
+$option_name = 'wpsm_site_status_msg';
 
 if ( is_multisite() ) {
     global $wpdb;
@@ -18,10 +18,9 @@ if ( is_multisite() ) {
     foreach ( $blog_ids as $blog_id ) {
         switch_to_blog( $blog_id );
         delete_option( $option_name );
-
-        // OR
-        // delete_site_option( $option_name );
     }
+
+    delete_site_option( $option_name );
 
     switch_to_blog( $original_blog_id );
 } else {
