@@ -76,8 +76,11 @@ class WP_Admin_Status_Message {
         add_action('wp_dashboard_setup',  array( $this, 'wasm_dashboard_widgets'));
 
         // Status message notice in dashboard
-        add_action( 'admin_head', array($this, 'wasm_status_notice_css'));
         add_action( 'admin_notices', array($this, 'wasm_status_notice'));
+        
+        // Styles
+        add_action( 'admin_head', array($this, 'wasm_status_notice_css'));
+        add_action( 'admin_head', array($this, 'wasm_admin_enqueue_scripts'));
     }
 
     /**
@@ -111,7 +114,7 @@ class WP_Admin_Status_Message {
      * Displays option field
      */
     public function wpsm_network_status_msg_callback() { ?>
-        <textarea rows="2" cols="64" name="wpsm_site_status_msg" maxlength="128"><?php echo esc_html(get_site_option('wpsm_site_status_msg')); ?></textarea><br>
+        <textarea rows="2" cols="64" name="wpsm_site_status_msg" maxlength="255"><?php echo esc_html(get_site_option('wpsm_site_status_msg')); ?></textarea><br>
         <label><?php _e('Enter the status message to set on all sites.', 'wp-admin-status-message') ?></label>
     <?php }
 
@@ -192,7 +195,7 @@ class WP_Admin_Status_Message {
      * Displays option field
      */
     public function wpsm_site_status_msg_callback() { ?>
-        <textarea rows="2" cols="80" name="wpsm_site_status_msg" maxlength="128"><?php echo get_option('wpsm_site_status_msg'); ?></textarea><br>
+        <textarea rows="2" cols="80" name="wpsm_site_status_msg" maxlength="255"><?php echo get_option('wpsm_site_status_msg'); ?></textarea><br>
         <label><?php _e('Enter the status message to display in admin dashboard Status Message widget.', 'wp-admin-status-message') ?></label>
     <?php }
 
@@ -229,7 +232,13 @@ class WP_Admin_Status_Message {
     public function wasm_dashboard_status_message() {
         $wasm_status_message = get_option('wpsm_site_status_msg');
         if ($wasm_status_message) {
-            echo esc_html($wasm_status_message);
+            echo '<div class="wasm-status-msg-wrap">
+                <span class="screen-reader-text">'.
+                    __( 'Status Message', 'wp-admin-status-message').
+                '</span><span class="dashicons dashicons-format-quote"></span>'.
+                wp_kses_post($wasm_status_message).
+                '<span class="dashicons dashicons-format-quote wasm-inverted"></span>'.
+            '</div>';
         } else  {
             esc_html_e('No status message', 'wp-admin-status-message');
         }
@@ -239,48 +248,56 @@ class WP_Admin_Status_Message {
      * Run on deactivation
      */
     public function wasm_status_notice() {
-        $wasm_status_message = get_option('wpsm_site_status_msg');
-        $lang   = '';
-        if ( 'en_' !== substr( get_user_locale(), 0, 3 ) ) {
-            $lang = ' lang="en"';
+        $wasm_status_message = wp_kses_post(get_option('wpsm_site_status_msg'));
+        if ($wasm_status_message) {
+            echo '<div class="wasm-notice wasm-status-msg-wrap">
+                <span class="screen-reader-text">'.
+                    __( 'Status Message', 'wp-admin-status-message').
+                '</span><span class="dashicons dashicons-format-quote"></span>'.
+                wp_kses_post($wasm_status_message).
+                '<span class="dashicons dashicons-format-quote wasm-inverted"></span>'.
+            '</div>';
         }
-        printf(
-            '<p id="wasm-status-msg"><span class="screen-reader-text">%s </span><span dir="ltr"%s>%s</span></p>',
-            __( 'Status Message', 'wp-admin-status-message'),
-            $lang,
-            $wasm_status_message
-        );
     }
 
     /**
      * Status message css
      */
     public function wasm_status_notice_css() {
+        global $_wp_admin_css_colors;
+        $color_scheme = $_wp_admin_css_colors[get_user_option( 'admin_color')]->colors;
+        $color_0 = esc_attr($color_scheme[0]);
+        $color_1 = esc_attr($color_scheme[1]);
+        $color_2 = esc_attr($color_scheme[2]);
+        $color_3 = esc_attr($color_scheme[3]);
         echo "
         <style type='text/css'>
-        #wasm-status-msg {
-            float: right;
-            padding: 5px 10px;
-            margin: 0;
-            font-size: 12px;
-            line-height: 1.6666;
+        .wasm-status-msg-wrap {
+            background: {$color_2};
+            border: 5px solid {$color_1};
+            color: #fff;
+            font-family: 'Sansita Swashed', cursive;
+            font-size: 16px;
+            line-height: 1.7;
+            text-align: center;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+            padding: 12px;
         }
-        .rtl #wasm-status-msg {
-            float: left;
+        .wasm-notice {
+            margin: 45px 20px 0 2px;
         }
-        .block-editor-page #wasm-status-msg {
-            display: none;
-        }
-        @media screen and (max-width: 782px) {
-            #wasm-status-msg,
-            .rtl #wasm-status-msg {
-                float: none;
-                padding-left: 0;
-                padding-right: 0;
-            }
+        .wasm-inverted {
+            transform: rotate(180deg);
         }
         </style>
         ";
+    }
+
+    /**
+     * Admin enqueue
+     */
+    public function wasm_admin_enqueue_scripts() {
+        wp_enqueue_style('google-fonts-sansita-swashed', 'https://fonts.googleapis.com/css2?family=Sansita+Swashed&display=swap', '', $this->version);
     }
 
     /**
